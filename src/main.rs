@@ -9,5 +9,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let local_peer_id = PeerId::from(local_key.public());
     println!("Local peer id: {local_peer_id:?}");
 
+    // Construct a transport 
+    let transport = libp2p::development_transport(local_key);
+    println!("Transport created");
+
     Ok(())
 }
