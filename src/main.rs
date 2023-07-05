@@ -1,5 +1,13 @@
-use libp2p::{identity, PeerId};
+use futures::StreamExt;
+use libp2p::{identity, PeerId, ping, Multiaddr};
+use libp2p::swarm::{keep_alive, NetworkBehaviour, SwarmBuilder, SwarmEvent};
 use std::error::Error; 
+mod network;
+#[derive(NetworkBehaviour, Default)]
+pub struct Behaviour {
+    keep_alive: keep_alive::Behaviour,
+    ping: ping::Behaviour
+}
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -10,8 +18,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Local peer id: {local_peer_id:?}");
 
     // Construct a transport 
-    let transport = libp2p::development_transport(local_key);
+    let transport = libp2p::development_transport(local_key).await?;
     println!("Transport created");
+    let behaviour = Behaviour::default();
+
+
+    let mut swarm = SwarmBuilder::with_async_std_executor(transport, behaviour, local_peer_id).build();
+
+
+    swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
+
+
+    if let Some(addr) = std::env::args().nth(1) {
+       let remote: Multiaddr = addr.parse()?;
+       swarm.dial(remote)?;
+       println!("Dialed {addr}");
+    }
+
+    network::run(swarm).await;
 
     Ok(())
 }
