@@ -1,12 +1,16 @@
 use futures::StreamExt;
 use libp2p::{identity, PeerId, ping, Multiaddr};
-use libp2p::swarm::{keep_alive, NetworkBehaviour, SwarmBuilder, SwarmEvent};
+use libp2p::swarm::{keep_alive, NetworkBehaviour, SwarmBuilder};
 use std::error::Error; 
 mod network;
 #[derive(NetworkBehaviour, Default)]
 pub struct Behaviour {
     keep_alive: keep_alive::Behaviour,
     ping: ping::Behaviour
+}
+
+pub enum Command {
+    Dial(Multiaddr)
 }
 
 #[async_std::main]
@@ -35,7 +39,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
        println!("Dialed {addr}");
     }
 
-    network::run(swarm).await;
+    let (sender, rec) = futures::channel::mpsc::channel::<Command>(1);
+
+    network::run(swarm, rec).await;
 
     Ok(())
 }
