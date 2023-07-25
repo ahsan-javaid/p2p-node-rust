@@ -39,9 +39,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
        println!("Dialed {addr}");
     }
 
-    let (sender, rec) = futures::channel::mpsc::channel::<Command>(1);
+    let (sender, receive) = futures::channel::mpsc::channel::<Command>(1);
 
-    network::run(swarm, rec).await;
+    network::run(swarm, receive).await;
 
     Ok(())
 }
